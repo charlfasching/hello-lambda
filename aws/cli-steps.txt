@@ -1,0 +1,28 @@
+# create maven project,  although we do not need s3 interaction, service parameter is mandatory. so we'll just ignore it.
+ mvn archetype:generate \                                                                                                                                                                                                                                               <aws:charl>
+    -DarchetypeGroupId=software.amazon.awssdk \
+    -DarchetypeArtifactId=archetype-lambda \
+    -DarchetypeVersion=2.29.8 \
+    -DgroupId=cap.cca.mig \
+    -DartifactId=hello-lambda \
+    -Dservice=s3  \
+    -DinteractiveMode=false
+
+# We adjusted the handle method in App class and added the correct handle to Dockerfile
+CMD [ "cap.cca.mig.App::handleRequest" ]
+
+# Building maven with dependencies
+mvn compile dependency:copy-dependencies -DincludeScope=runtime
+
+# Docker Build, platform flag is important
+docker build . --platform linux/amd64 -t hello-lambda-java
+
+# configure AWS profile
+aws configure
+...
+
+# set profile if configure was not on default
+ export AWS_PROFILE=chosen
+
+# check existing Elastic Container Registries
+ aws ecr describe-repositories
