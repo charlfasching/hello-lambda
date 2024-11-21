@@ -1,0 +1,9 @@
+
+### Simulating the Lambda runtime proxy call
+POST http://localhost:9234/2015-03-31/functions/function/invocations
+Content-Type: application/json
+
+{"payload":"world!"}
+
+###
+

@@ -15,7 +15,10 @@ CMD [ "cap.cca.mig.App::handleRequest" ]
 mvn compile dependency:copy-dependencies -DincludeScope=runtime
 
 # Docker Build, platform flag is important
-docker build . --platform linux/amd64 -t hello-lambda-java
+docker build . --platform linux/amd64 -t hello-lambda-java:2
+
+# Testing locally
+
 
 # configure AWS profile
 aws configure
