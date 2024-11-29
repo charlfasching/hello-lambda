@@ -5,9 +5,10 @@ This project contains an AWS Lambda maven application with [AWS Java SDK 2.x](ht
 Here follows instructions from AWS Document on building [Lambda for Java](https://docs.aws.amazon.com/lambda/latest/dg/java-image.html#java-image-instructions) 
 
 ## Prerequisites
-- Java 1.8+
+- Java JDK (Archetype supplies 8, but we use 21 in this example)
 - Apache Maven
 - Docker
+- AWS CLI
 
 ## Development
 
@@ -25,7 +26,6 @@ mvn archetype:generate \                                                        
 -DinteractiveMode=false
 ```
 We will not be using AWS S3 buckets or files, but the service parameter is mandatory. The examples show s3.
-
  
 The configured AWS Java SDK client is created in `DependencyFactory` class. 
 You can add the code in App class to interact with the SDK client based on your use case.
@@ -41,13 +41,11 @@ Seeing as we just wanted a hello world lambda, I removed the S3 client, and kept
 Most of the Dockerfile can be left as is, but some adjustment is need on CMD in order to execute our Lambda Handler.
 
 - The FROM line specifies which Base Image to use. Unless you want to the change the Java runtime, you can leave this untouched.
-
 - The COPY lines are what copies the App code and aws dependencies into the container for later execution.
-
 - The CMD line is what specifies which Java class to call from the Lambda runtime
   - In this case it would be "cap.cca.mig.App::handleRequest"
 
-#### Building the project
+### Building the project
 
 #### Maven 
 ```
@@ -63,46 +61,7 @@ docker build . --platform linux/amd64 -t hello-lambda-java:latest
 _The build command specifies the --platform linux/amd64 option to ensure that your container is compatible with the Lambda execution environment regardless of the architecture of your build machine. ._
 
 
-#### Testing it locally
-
-If you use the lambda docker image provided by AWS, it will have the Lambda Interface Emulator included in the Image.
-This means it will have a Golang server running on port 8080
-
-All we have to do is start the container with port mapping. 
-```
-docker run -ti -p 9000:8080 hello-lambda-java:latest
-```
-This will keep it running in foreground and allow us to make HTTP calls on port 9000.
-
-You may use any HTTP Client to make the call, I included a http request for IntelliJ in the src/test directory.
-Here is a curl for reference.
-```
-$ curl -v "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"payload":"world!"}'
- 
-* Host localhost:9000 was resolved.
-* IPv6: ::1
-* IPv4: 127.0.0.1
-*   Trying [::1]:9000...
-* Connected to localhost (::1) port 9000
-> POST /2015-03-31/functions/function/invocations HTTP/1.1
-> Host: localhost:9000
-> User-Agent: curl/8.7.1
-> Accept: */*
-> Content-Length: 20
-> Content-Type: application/x-www-form-urlencoded
-> 
-* upload completely sent off: 20 bytes
-< HTTP/1.1 200 OK
-< Date: Thu, 21 Nov 2024 16:13:29 GMT
-< Content-Length: 14
-< Content-Type: text/plain; charset=utf-8
-< 
-* Connection #0 to host localhost left intact
-"hello world!"%                                
-```
-
-
-#### Adding more SDK clients
+#### Adding more AWS SDK clients
 To add more service clients, you need to add the specific services modules in `pom.xml` and create the clients in `DependencyFactory` following the same 
 pattern as s3Client.
 
@@ -197,7 +156,7 @@ $ aws iam create-role   --role-name hello-lambda-java    --assume-role-policy-do
     "Role": {
         "Path": "/",
         "RoleName": "hello-lambda-java",
-        "RoleId": "AROAZVRHILQVXKGB5Z6PD",
+        "RoleId": "AZOAZVRHKLQVXKGB5Z6PD",
         "Arn": "arn:aws:iam::000000000000:role/hello-lambda-java",
         "CreateDate": "2024-11-09T19:03:48+00:00",
         "AssumeRolePolicyDocument": {
@@ -273,7 +232,8 @@ docker images | grep ecr
 3) Upload
 Finally, you may push the image to the ecr 
 ```shell
-docker push $awsAccountId.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java
+docker push 000000000000.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java
+...
 ```
 If everything was done successfully, the docker image should now be available on ECR 
 
@@ -296,7 +256,7 @@ aws ecr list-images --repository-name hello-lambda-java
 aws lambda create-function \                                                                                                                                        
     --function-name hello-lambda-java \
     --package-type Image \
-    --code ImageUri=000000000000.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java:1 \
+    --code ImageUri=000000000000.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java:latest \
     --role arn:aws:iam::000000000000:role/hello-lambda-java \
     --region eu-west-1
 {
@@ -341,37 +301,6 @@ aws lambda list-functions                                                       
 {
     "Functions": [
         {
-            "FunctionName": "hello-lambda-java2",
-            "FunctionArn": "arn:aws:lambda:eu-west-1:000000000000:function:hello-lambda-java2",
-            "Role": "arn:aws:iam::000000000000:role/hello-lambda-java",
-            "CodeSize": 0,
-            "Description": "",
-            "Timeout": 3,
-            "MemorySize": 128,
-            "LastModified": "2024-11-11T16:34:41.952+0000",
-            "CodeSha256": "0a1965fc5d425de9c703ac85468893dfb27b103700f9e935e2d6e7ff716c88eb",
-            "Version": "$LATEST",
-            "TracingConfig": {
-                "Mode": "PassThrough"
-            },
-            "RevisionId": "5c8a6e16-3cb7-417e-9fbf-1cff2568e455",
-            "PackageType": "Image",
-            "Architectures": [
-                "x86_64"
-            ],
-            "EphemeralStorage": {
-                "Size": 512
-            },
-            "SnapStart": {
-                "ApplyOn": "None",
-                "OptimizationStatus": "Off"
-            },
-            "LoggingConfig": {
-                "LogFormat": "Text",
-                "LogGroup": "/aws/lambda/hello-lambda-java2"
-            }
-        },
-        {
             "FunctionName": "hello-lambda-java",
             "FunctionArn": "arn:aws:lambda:eu-west-1:000000000000:function:hello-lambda-java",
             "Role": "arn:aws:iam::000000000000:role/hello-lambda-java",
@@ -405,6 +334,10 @@ aws lambda list-functions                                                       
     ]
 }
 ```
+3) Update the Image with new version
+```shell
+aws lambda update-function-code --function-name hello-lambda-java --image-uri 000000000000.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java:2
+```
 
 ### SAM Deployment (Alternative)
 
@@ -424,5 +357,73 @@ See [Deploying Serverless Applications](https://docs.aws.amazon.com/serverless-a
 
 ### Local Testing
 
+If you use the lambda docker image provided by AWS, it will have the Lambda Interface Emulator included in the Image.
+- This means it will have a web server endpoint running on port 8080
+- If not, then you need to include it. See the code, releases and instructions [here](https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/) 
+
+1) The existing docker image that was built above, can be used.
+   1) Here we list the images, just to verify the name and version
+   2) You should see both images with the simple name and the one retagged with ecr URI 
+```shell
+docker images | grep hello-lambda-java
+```
+2) Running the docker image with port exposed. 
+   1) Internal port is 8080 and the host port is 9000
+   2) Any other host could be used, if 9000 is in use
+   3) The container should start in foreground, giving you log output
+   4) if you want to start it in background, add **-d** flag, but then you need to follow the log in another window
+```shell
+docker run -ti -p 9000:8080 hello-lambda-java
+```
+```shell
+24 Nov 2024 09:10:33,413 [INFO] (rapid) exec '/var/runtime/bootstrap' (cwd=/var/task, handler=)
+```
+3) A payload can be sent to the Function
+   1) The curl command can be used to send http requests into the container
+   2) The body after **-d** parameter, should be in JSON format and match what is expected inside the lambda
+   3) The lambda code in this example expects a field "payload" 
+```shell
+ curl -v "http://localhost:9234/2015-03-31/functions/function/invocations" -d '{"payload":"world!"}'
+```
+```shell
+* Host localhost:9234 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:9234...
+* Connected to localhost (::1) port 9234
+> POST /2015-03-31/functions/function/invocations HTTP/1.1
+> Host: localhost:9234
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Length: 20
+> Content-Type: application/x-www-form-urlencoded
+> 
+* upload completely sent off: 20 bytes
+< HTTP/1.1 200 OK
+< Date: Sun, 24 Nov 2024 09:12:08 GMT
+< Content-Length: 14
+< Content-Type: text/plain; charset=utf-8
+< 
+* Connection #0 to host localhost left intact
+"hello world!"%  
+```
+You may use any HTTP Client to make the call, I included a http request for IntelliJ in the src/test directory.
+Here is a curl for reference.
+
+
 ### Remote Testing 
+
+- This means we use the aws cli to send payload through the sdk to a deployed lambda
+- Here is the aws [reference documentation](https://docs.aws.amazon.com/cli/latest/reference/lambda/invoke.html) for invoking lambda through cli
+- To invoke the function from the command line Synchronously (default), you can 
+```shell
+
+aws lambda invoke \
+    --function-name hello-lambda-java \
+    --invocation-type RequestResponse \
+    --cli-binary-format raw-in-base64-out \
+    --payload '{"payload":"world!"}' \
+    response.json
+```
+
 
