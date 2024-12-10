@@ -363,7 +363,7 @@ If you use the lambda docker image provided by AWS, it will have the Lambda Inte
 
 1) The existing docker image that was built above, can be used.
    1) Here we list the images, just to verify the name and version
-   2) You should see both images with the simple name and the one retagged with ecr URI 
+   2) You should see both images with the simple name and the one re-tagged with ecr URI 
 ```shell
 docker images | grep hello-lambda-java
 ```
