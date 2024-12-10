@@ -221,7 +221,7 @@ docker login --username AWS --password $password 000000000000.dkr.ecr.eu-west-1.
  
 2) Prepare Docker image
 
- To upload the docker image into ECR, it needs to be retagged to the "repositoryUri" from the ecr repo.
+ To upload the docker image into ECR, it needs to be re-tagged to the "repositoryUri" from the ecr repo.
 ```shell
 docker tag hello-lambda-java:latest 000000000000.dkr.ecr.eu-west-1.amazonaws.com/hello-lambda-java
 ``` 
